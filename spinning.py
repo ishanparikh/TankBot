@@ -308,6 +308,7 @@ def move(i):
         turnRight()
     else:
         turnLeft()
+
 def turnRight():
     GameServer.sendMessage(ServerMessageTypes.TOGGLERIGHT)
     GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount':3})    
@@ -328,12 +329,6 @@ def switchMovement(i):
              
 
 def Main():
-    tes = 0
-    x1 = 0
-    x2 = 0
-    t1 = 0
-    num =0
-    t2 = 0
     t = time.time()
     i = 0
     while True:
@@ -345,37 +340,10 @@ def Main():
         if (elapsedTime > 1):
             
             switchMovement(i)
-            # i =1
             t = loopTime
         else:
             move(i) 
-    # sys.waitTime(2000)
-    
-        #GameServer.sendMessage(ServerMessageTypes.TOGGLETURRETRIGHT)
-        #GameServer.sendMessage(ServerMessageTypes.TOGGLERIGHT)
-        # time.sleep(1)
-        # if tes == 0:
-        #     t1 = time.time()
-        #     x1 = info.myTank['X']
-        #     y1 = info.myTank['Y']
-        #     # GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount':90})
-        #     GameServer.sendMessage(ServerMessageTypes.TOGGLERIGHT)
-        #     logging.info('Turning right')
-        #     time.sleep(2)
-        #     GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount':10})
-        #     tes = 1
-        # x2 = info.myTank['X']
-        # y2 = info.myTank['Y']
-        # logging.info(x1)
-        # logging.info(x2)
-        # logging.info(y1)
-        # logging.info(y2)
-        # if x2 >= x1 + 9:
-        #     t2 = time.time()
-        #     print(t2-t1)
-
-        #tryShot()
-
+        tryShot()
 
 if __name__ == '__main__':
     Main()

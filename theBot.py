@@ -336,21 +336,47 @@ def tryShot():
         if turretHeading == ht:
             GameServer.sendMessage(ServerMessageTypes.FIRE)
 
+def move(i):
+    if (i == 0):
+        turnRight()
+    else:
+        turnLeft()
+
+def turnRight():
+    GameServer.sendMessage(ServerMessageTypes.TOGGLERIGHT)
+    GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount':3})    
+    logging.info('Turning right')
+
+def turnLeft():
+    GameServer.sendMessage(ServerMessageTypes.TOGGLELEFT)
+    GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount':3})    
+    logging.info('Turning left')
+
+def switchMovement(i):
+    if (i == 0):
+        i = 1
+        turnLeft()
+    else:
+        i = 0    
+        turnRight()
+             
 
 def Main():
-    t = 0
-
+    t = time.time()
+    i = 0
     while True:
         message = GameServer.readMessage()
         info.update(message)
-        for enemy in info.enemies:
-            print(enemy)
-
-        GameServer.sendMessage(ServerMessageTypes.TOGGLETURRETRIGHT)
-        # GameServer.sendMessage(ServerMessageTypes.TOGGLERIGHT)
-
+        loopTime = time.time()
+        elapsedTime = loopTime - t
+        print(i)
+        if (elapsedTime > 1):
+            
+            switchMovement(i)
+            t = loopTime
+        else:
+            move(i) 
         tryShot()
-
 
 if __name__ == '__main__':
     Main()
