@@ -7,8 +7,10 @@ import binascii
 import struct
 import argparse
 import random
+import math
 import pdb
 import time
+import sympy
 
 
 class ServerMessageTypes(object):
@@ -147,9 +149,11 @@ class ServerComms(object):
             binascii.hexlify(message)))
         return self.ServerSocket.send(message)
 
+
 class States(object):
     SCAN = 'SCAN'
     MOVE = 'MOVE'
+
 
 # Parse command line args
 parser = argparse.ArgumentParser()
@@ -168,13 +172,16 @@ else:
 # Connect to game server
 GameServer = ServerComms(args.hostname, args.port)
 
+
 class States(object):
     NOTHING = 'NOTHING'
+
 
 def getCartesian(x, y, b):
     m = (b - 90) / 360
     c = y - m * x
     return m, c
+
 
 def getHeading(x1, y1, x2, y2):
     heading = math.atan2(y2 - y1, x2 - x1)
@@ -182,13 +189,16 @@ def getHeading(x1, y1, x2, y2):
     heading = math.fmod(heading - 360, 360)
     return abs(heading)
 
+
 def calculateDistance(x1, y1, x2, y2):
     headingX = x2 - x1
     headingY = y2 - y1
     return math.sqrt((headingX * headingX) + (headingY * headingY))
 
+
 def targetStill(enemy_x, enemy_y, me_x, me_y):
     return getHeading(enemy_x, enemy_y, me_x, me_y)
+
 
 def targetStraight(enemy_x, enemy_y, me_x, me_y):
     a = enemy_x
@@ -215,9 +225,24 @@ def targetStraight(enemy_x, enemy_y, me_x, me_y):
 
 
 def quadratic(a, b, c):
-    return -2*b + Math.sqrt(b**2 - 4*a*c)
+    return (-b + math.sqrt(b ** 2 - 4 * a * c))/(2*a)
 
-def targetRight(enemy_x, enemy_y, me_x, me_y, p):
+
+def targetRight(enemy_x, enemy_y, me_x, me_y):
+    x = sympy.Symbol('x')
+    y = sympy.Symbol('y')
+
+    a = enemy_x
+    b = enemy_y
+    c = me_x
+    d = me_y
+    r = turnRadius
+
+    [p,q] = sympy.nsolve([ math.sqrt((x - a) ** 2 + (y - b)) / speed_bullet - ( r * math.arccos(1 - (x - c) ** 2 - (y - d) ** 2) / (2 * r ** 2)) / speed_enemy, (x - a) ** 2 + (y - b) ** 2 - r ** 2 , [x,y], [1,1]])
+    return getHeading(p,q)
+
+
+def targetRight2(p, enemy_x, enemy_y, me_x, me_y):
     x, y = p
     a = enemy_x
     b = enemy_y
@@ -225,13 +250,15 @@ def targetRight(enemy_x, enemy_y, me_x, me_y, p):
     d = me_y
     r = turnRadius
 
-    F[0] = sqrt((x-a)**2 + (y-b)) / speed_bullet - (r * arccos(1 - (x-c)**2 - (y-d)**2) / (2 * r**2)) / speed_enemy
-    F[1] = (x-a)**2 + (y-b)**2 - r**2
+    F[0] = sqrt((x - a) ** 2 + (y - b)) / speed_bullet - (
+                r * arccos(1 - (x - c) ** 2 - (y - d) ** 2) / (2 * r ** 2)) / speed_enemy
+    F[1] = (x - a) ** 2 + (y - b) ** 2 - r ** 2
     enemy_x, enemy_y = equation(F)
     return getHeading(enemy_y, enemy_y, me_x, me_y)
 
+
 def equation(F):
-    zGuess = array([1,1])
+    zGuess = array([1, 1])
     z = fsolve(equation, zGuess)
     return z
 
@@ -248,12 +275,15 @@ class Info(object):
     def update(self, message):
         if message['messageType'] == ServerMessageTypes.OBJECTUPDATE:
             if message['Type'] == 'Tank':
-                if message['Name'] == args.name:
+                if message['Id'] == tankID:
                     self.myTank = message
+                    logging.info("x1: " + str(message.get('X')))
+                    logging.info("x2: " + str(message.get('Y')))
                 else:
                     if (message['Id'] in self.enemies):
                         self.prevEnemies[message['Id']] = self.enemies[message['Id']]
                     self.enemies[message['Id']] = message
+
             elif message['Type'] == 'HealthPickup':
                 self.healthPickups[message['Id']] = message
             elif message['Type'] == 'AmmoPickup':
@@ -263,17 +293,22 @@ class Info(object):
             else:
                 print('Unrecognized message type:', message)
 
+
 # Spawn our tank
 logging.info("Creating tank with name '{}'".format(args.name))
 GameServer.sendMessage(ServerMessageTypes.CREATETANK, {'Name': args.name})
+
+message = GameServer.readMessage()
+tankID = message.get("Id")
 
 maxHealth = 5
 ammo = 10
 waitTime = 50
 info = Info()
-tankSpeed = None
-projectileSpeed = None
+tankSpeed = 10
+projectileSpeed = 35
 turnRadius = 5.7815
+
 
 def tryShot():
     turretHeading = info.myTank["TurretHeading"]
@@ -301,39 +336,20 @@ def tryShot():
         if turretHeading == ht:
             GameServer.sendMessage(ServerMessageTypes.FIRE)
 
+
 def Main():
-    tes = 0
-    x1 = 0
-    x2 = 0
-    t1 = 0
-    t2 = 0
+    t = 0
 
     while True:
         message = GameServer.readMessage()
         info.update(message)
+        for enemy in info.enemies:
+            print(enemy)
 
-        #GameServer.sendMessage(ServerMessageTypes.TOGGLETURRETRIGHT)
-        #GameServer.sendMessage(ServerMessageTypes.TOGGLERIGHT)
-        time.sleep(1)
-        if tes == 0:
-            t1 = time.time()
-            x1 = info.myTank['X']
-            y1 = info.myTank['Y']
-            GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount':90})
-            time.sleep(2)
-            GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount':10})
-            tes = 1
-        x2 = info.myTank['X']
-        y2 = info.myTank['Y']
-        logging.info(x1)
-        logging.info(x2)
-        logging.info(y1)
-        logging.info(y2)
-        if x2 >= x1 + 9:
-            t2 = time.time()
-            print(t2-t1)
+        GameServer.sendMessage(ServerMessageTypes.TOGGLETURRETRIGHT)
+        # GameServer.sendMessage(ServerMessageTypes.TOGGLERIGHT)
 
-        #tryShot()
+        tryShot()
 
 
 if __name__ == '__main__':
