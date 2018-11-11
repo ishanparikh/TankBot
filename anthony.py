@@ -308,11 +308,15 @@ def Main():
         print(info.myTank['X'])
         print(info.myTank['Y'])
 
+        t1 = time.time()
         GameServer.sendMessage(ServerMessageTypes.TOGGLETURRETRIGHT)
         #GameServer.sendMessage(ServerMessageTypes.TOGGLERIGHT)
         GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, 45)
-        GameServer.sendMessage(ServerMessageTypes.TOGGLEFORWARD)
+        GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, 10)
         #tryShot()
+        t2 = time.time()
+        print(t2-t1)
+        return
 
 if __name__ == '__main__':
     Main()
