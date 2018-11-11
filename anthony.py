@@ -156,7 +156,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--debug', action='store_true', help='Enable debug output')
 parser.add_argument('-H', '--hostname', default='127.0.0.1', help='Hostname to connect to')
 parser.add_argument('-p', '--port', default=8052, type=int, help='Port to connect to')
-parser.add_argument('-n', '--name', default='Anthony', help='Name of bot')
+parser.add_argument('-n', '--name', default='RandomBot', help='Name of bot')
 args = parser.parse_args()
 
 # Set up console logging
@@ -302,22 +302,39 @@ def tryShot():
             GameServer.sendMessage(ServerMessageTypes.FIRE)
 
 def Main():
+    tes = 0
+    x1 = 0
+    x2 = 0
+    t1 = 0
+    t2 = 0
+
     while True:
         message = GameServer.readMessage()
         info.update(message)
 
-        time.sleep(2)
-
-        pdb.set_trace()
-        t1 = time.time()
-        GameServer.sendMessage(ServerMessageTypes.TOGGLETURRETRIGHT)
+        #GameServer.sendMessage(ServerMessageTypes.TOGGLETURRETRIGHT)
         #GameServer.sendMessage(ServerMessageTypes.TOGGLERIGHT)
-        GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, 180)
-        GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, 100)
+        time.sleep(1)
+        if tes == 0:
+            t1 = time.time()
+            x1 = info.myTank['X']
+            y1 = info.myTank['Y']
+            GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount':90})
+            time.sleep(2)
+            GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount':10})
+            tes = 1
+        x2 = info.myTank['X']
+        y2 = info.myTank['Y']
+        logging.info(x1)
+        logging.info(x2)
+        logging.info(y1)
+        logging.info(y2)
+        if x2 >= x1 + 9:
+            t2 = time.time()
+            print(t2-t1)
+
         #tryShot()
-        t2 = time.time()
-        print(t2-t1)
-        return
+
 
 if __name__ == '__main__':
     Main()

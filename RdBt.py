@@ -10,7 +10,7 @@ import argparse
 import random
 import math
 import time
-
+import pdb
 
 class ServerMessageTypes(object):
     TEST = 0
@@ -243,8 +243,9 @@ class Info(object):
                 if message['Name'] == args.name:
                     self.myTank = message
                 else:
-                    self.prevEnemies[message['Id']] = self.enemies[message['Id']]
-                    self.enemies[message['Id']] = {'obj': message, 'time': 0}
+                    if (message['Id'] in self.enemies):
+                        self.prevEnemies[message['Id']] = self.enemies[message['Id']]
+                    self.enemies[message['Id']] = message
             elif message['Type'] == 'HealthPickup':
                 self.healthPickups[message['Id']] = {'obj': message, 'time': 0}
             elif message['Type'] == 'AmmoPickup':
@@ -265,29 +266,32 @@ waitTime = 50
 info = Info()
 
 
-def checkShot(info):
+def tryShot():
     turretHeading = info.myTank["TurretHeading"]
-    x1
-    y1
-    h1
-    x2
-    y2
-    h2
+    xm = info.myTank['X']
+    ym = info.myTank['Y']
     for enemy in info.prevEnemies:
-        x1 = enemy['obj']['X']
-        y1 = enemy['obj']['Y']
-        h1 = enemy['obj']['Heading']
-        x2 = info.enemies[enemy['obj']['Id']]['obj']['X']
-        y2 = info.enemies[enemy['obj']['Id']]['obj']['Y']
-        h2 = info.enemies[enemy['obj']['Id']]['obj']['Heading']
+        x1 = info.prevEnemies[enemy]['X']
+        y1 = info.prevEnemies[enemy]['Y']
+        h1 = info.prevEnemies[enemy]['Heading']
+        x2 = info.enemies[enemy]['X']
+        y2 = info.enemies[enemy]['Y']
+        h2 = info.enemies[enemy]['Heading']
+        ht = None
+
         if (x1 == x2 and y1 == y2):
-            targetStill()
+            ht = targetStill(x2, y2, xm, ym)
         elif (x1 != x2 or y1 != y2) and h1 == h2:
-            targetStraight()
+            #ht = targetStraight(x2, y2, xm, ym)
+            ht = targetStill(x2, y2, xm, ym)
         elif (x1 != x2 or y1 != y2) and h1 > h2:
-            targetRight()
+            ht = targetRight(x2, y2, xm, ym)
+        elif (x1 != x2 or y1 != y2) and h1 < h2:
+            ht = targetRight(x2, y2, xm, ym)
         else:
-            targetLeft()
+            return
+        if turretHeading == ht:
+            GameServer.sendMessage(ServerMessageTypes.FIRE)
 
 def getHeading(x1, y1, x2, y2):
     heading = math.atan2(y2 - y1, x2 - x1)
@@ -311,8 +315,6 @@ def Main():
         while info.enemies.values()=={}:
             message = GameServer.readMessage()
             info.update(message)
-            if info.enemies.values()!={}:
-                break
         if info.mytank != None:
             bot_pos[0] = info.mytank['X']
             bot_pos[1] = info.mytank['Y']
@@ -321,15 +323,10 @@ def Main():
                 enmy_pos[0] = enmy_msg['X']
                 enmy_pos[1] = enmy_msg['Y']
 
-                hdng = targetStill(enmy_pos[0], enmy_pos[1], bot_pos[0], bot_pos[1])
+                hdng = targetStill(0,0, bot_pos[0], bot_pos[1])
                 flag = True
                 GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': hdng})
                 GameServer.sendMessage(ServerMessageTypes.TURNTURRETTOHEADING, {'Amount': hdng})
-
-
-
-
-
 
 
         if flag:
