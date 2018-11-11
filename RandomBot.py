@@ -81,7 +81,6 @@ class ServerMessageTypes(object):
         else:
             return "??UNKNOWN??"
 
-
 class ServerComms(object):
     '''
     TCP comms handler
@@ -148,8 +147,6 @@ class ServerComms(object):
             binascii.hexlify(message)))
         return self.ServerSocket.send(message)
 
-
-
 # Parse command line args
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--debug', action='store_true', help='Enable debug output')
@@ -215,7 +212,6 @@ allowedStationaryTime = 200  # allowed stationary time before having to move aga
 
 # vars
 stationaryTime = 0
-
 
 def getHeading(x1, y1, x2, y2):
     heading = math.atan2(y2 - y1, x2 - x1)
@@ -323,7 +319,6 @@ class Info(object):
         self.timeLeft = None
         self.hitDetected = False
         self.didHit = False
-
 
 class States(object):
     SCAN = 'SCAN'
@@ -435,10 +430,8 @@ def target(a, b, c, d, speed_e, speed_b, m, k):
     y = m * x + k
     return x, y
 
-
 def quadratic(a, b, c):
     return -2*b + Math.sqrt(b**2 - 4*a*c)
-
 
 def performAction(currentState, info):
     if currentState == States.SCAN or currentState == States.SEARCH_HEALTH or currentState == States.SEARCH_AMMO or currentState == States.SEARCH_SNITCH:
@@ -494,7 +487,6 @@ def performAction(currentState, info):
             else:
                 GameServer.sendMessage(ServerMessageTypes.FIRE)
 
-
     elif currentState == States.BANK_POINTS:
         x2 = y2 = None
 
@@ -517,7 +509,6 @@ def performAction(currentState, info):
     else:
         print('Undefined state.')
         exit()
-
 
 currentState = States.SCAN
 info = Info()
@@ -558,40 +549,40 @@ while True:
     performAction(currentState, info)
 
     print()
-"""
-i = 0
-ammoPos = []
-healthPos = []
-turretHead = []
-while True:
-    message = GameServer.readMessage()
-    if message['Name']=="":
 
-        if message['Type']=="AmmoPickup":
-            ammoPos.append((message['X'], message['Y']))
-        if message['Type']=="HealthPickup":
-            healthPos.append(())
+# i = 0
+# ammoPos = []
+# healthPos = []
+# turretHead = []
+# while True:
+#     message = GameServer.readMessage()
+#     if message['Name']=="":
 
-        while True:
-            dist =
-            angle =
-            GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount': min(10, )})
-    if message['Name']=="RandomBot":
-        turretHead[]
-    logging.info(message)
+#         if message['Type']=="AmmoPickup":
+#             ammoPos.append((message['X'], message['Y']))
+#         if message['Type']=="HealthPickup":
+#             healthPos.append(())
 
-    if i<=10:
-        logging.info("Turning randomly")
-        logging.info("Firing")
-        GameServer.sendMessage(ServerMessageTypes.FIRE)
-        GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': random.randint(0, 359)})
-    elif i <=15:
-        logging.info("Moving randomly")
-        GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount': random.randint(0, 10)})
-    if message['Name'] == "RandonBot" and message['Type']=="Tank":
-        if message['Ammo']<=5:
-            GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': random.randint(0, 359)})
+#         while True:
+#             dist =
+#             angle =
+#             GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount': min(10, )})
+#     if message['Name']=="RandomBot":
+#         turretHead[]
+#     logging.info(message)
 
-    i = i + 1
-    if i > 20:
-        i = 0"""
+#     if i<=10:
+#         logging.info("Turning randomly")
+#         logging.info("Firing")
+#         GameServer.sendMessage(ServerMessageTypes.FIRE)
+#         GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': random.randint(0, 359)})
+#     elif i <=15:
+#         logging.info("Moving randomly")
+#         GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount': random.randint(0, 10)})
+#     if message['Name'] == "RandonBot" and message['Type']=="Tank":
+#         if message['Ammo']<=5:
+#             GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': random.randint(0, 359)})
+
+#     i = i + 1
+#     if i > 20:
+#         i = 0
