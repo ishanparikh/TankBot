@@ -39,39 +39,39 @@ class ServerMessageTypes(object):
     GAMETIMEUPDATE = 26
     HITDETECTED = 27
     SUCCESSFULLHIT = 28
-    
+
     strings = {
-	TEST: "TEST",
-	CREATETANK: "CREATETANK",
-	DESPAWNTANK: "DESPAWNTANK",
-	FIRE: "FIRE",
-	TOGGLEFORWARD: "TOGGLEFORWARD",
-	TOGGLEREVERSE: "TOGGLEREVERSE",
-	TOGGLELEFT: "TOGGLELEFT",
-	TOGGLERIGHT: "TOGGLERIGHT",
-	TOGGLETURRETLEFT: "TOGGLETURRETLEFT",
-	TOGGLETURRETRIGHT: "TOGGLETURRENTRIGHT",
-	TURNTURRETTOHEADING: "TURNTURRETTOHEADING",
-	TURNTOHEADING: "TURNTOHEADING",
-	MOVEFORWARDDISTANCE: "MOVEFORWARDDISTANCE",
-	MOVEBACKWARSDISTANCE: "MOVEBACKWARDSDISTANCE",
-	STOPALL: "STOPALL",
-	STOPTURN: "STOPTURN",
-	STOPMOVE: "STOPMOVE",
-	STOPTURRET: "STOPTURRET",
-	OBJECTUPDATE: "OBJECTUPDATE",
-	HEALTHPICKUP: "HEALTHPICKUP",
-	AMMOPICKUP: "AMMOPICKUP",
-	SNITCHPICKUP: "SNITCHPICKUP",
-	DESTROYED: "DESTROYED",
-	ENTEREDGOAL: "ENTEREDGOAL",
-	KILL: "KILL",
-	SNITCHAPPEARED: "SNITCHAPPEARED",
-	GAMETIMEUPDATE: "GAMETIMEUPDATE",
-	HITDETECTED: "HITDETECTED",
-	SUCCESSFULLHIT: "SUCCESSFULLHIT"
+        TEST: "TEST",
+        CREATETANK: "CREATETANK",
+        DESPAWNTANK: "DESPAWNTANK",
+        FIRE: "FIRE",
+        TOGGLEFORWARD: "TOGGLEFORWARD",
+        TOGGLEREVERSE: "TOGGLEREVERSE",
+        TOGGLELEFT: "TOGGLELEFT",
+        TOGGLERIGHT: "TOGGLERIGHT",
+        TOGGLETURRETLEFT: "TOGGLETURRETLEFT",
+        TOGGLETURRETRIGHT: "TOGGLETURRENTRIGHT",
+        TURNTURRETTOHEADING: "TURNTURRETTOHEADING",
+        TURNTOHEADING: "TURNTOHEADING",
+        MOVEFORWARDDISTANCE: "MOVEFORWARDDISTANCE",
+        MOVEBACKWARSDISTANCE: "MOVEBACKWARDSDISTANCE",
+        STOPALL: "STOPALL",
+        STOPTURN: "STOPTURN",
+        STOPMOVE: "STOPMOVE",
+        STOPTURRET: "STOPTURRET",
+        OBJECTUPDATE: "OBJECTUPDATE",
+        HEALTHPICKUP: "HEALTHPICKUP",
+        AMMOPICKUP: "AMMOPICKUP",
+        SNITCHPICKUP: "SNITCHPICKUP",
+        DESTROYED: "DESTROYED",
+        ENTEREDGOAL: "ENTEREDGOAL",
+        KILL: "KILL",
+        SNITCHAPPEARED: "SNITCHAPPEARED",
+        GAMETIMEUPDATE: "GAMETIMEUPDATE",
+        HITDETECTED: "HITDETECTED",
+        SUCCESSFULLHIT: "SUCCESSFULLHIT"
     }
-    
+
     def toString(self, id):
         if id in self.strings.keys():
             return self.strings[id]
@@ -95,7 +95,7 @@ class ServerComms(object):
     def __init__(self, hostname, port):
         self.ServerSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.ServerSocket.connect((hostname, port))
-	
+
     def readMessage(self):
         '''
         Read a message from the server
@@ -104,7 +104,7 @@ class ServerComms(object):
         messageLenRaw = self.ServerSocket.recv(1)
         messageType = struct.unpack('>B', messageTypeRaw)[0]
         messageLen = struct.unpack('>B', messageLenRaw)[0]
-        
+
         if messageLen == 0:
             messageData = bytearray()
             messagePayload = {'messageType': messageType}
@@ -113,38 +113,41 @@ class ServerComms(object):
             logging.debug("*** {}".format(messageData))
             messagePayload = json.loads(messageData.decode('utf-8'))
             messagePayload['messageType'] = messageType
-                
+
         logging.debug('Turned message {} into type {} payload {}'.format(
             binascii.hexlify(messageData),
             self.MessageTypes.toString(messageType),
             messagePayload))
         return messagePayload
-		
+
     def sendMessage(self, messageType=None, messagePayload=None):
         '''
         Send a message to the server
         '''
         message = bytearray()
-        
+
         if messageType is not None:
             message.append(messageType)
         else:
             message.append(0)
-        
+
         if messagePayload is not None:
             messageString = json.dumps(messagePayload)
             message.append(len(messageString))
             message.extend(str.encode(messageString))
-                    
+
         else:
             message.append(0)
-        
+
         logging.debug('Turned message type {} payload {} into {}'.format(
             self.MessageTypes.toString(messageType),
             messagePayload,
             binascii.hexlify(message)))
         return self.ServerSocket.send(message)
 
+class States(object):
+    SCAN = 'SCAN'
+    MOVE = 'MOVE'
 
 # Parse command line args
 parser = argparse.ArgumentParser()
@@ -156,43 +159,146 @@ args = parser.parse_args()
 
 # Set up console logging
 if args.debug:
-	logging.basicConfig(format='[%(asctime)s] %(message)s', level=logging.DEBUG)
+    logging.basicConfig(format='[%(asctime)s] %(message)s', level=logging.DEBUG)
 else:
-	logging.basicConfig(format='[%(asctime)s] %(message)s', level=logging.INFO)
-
+    logging.basicConfig(format='[%(asctime)s] %(message)s', level=logging.INFO)
 
 # Connect to game server
 GameServer = ServerComms(args.hostname, args.port)
+
+class States(object):
+    NOTHING = 'NOTHING'
+
+def getCartesian(x, y, b):
+    m = (b - 90) / 360
+    c = y - m * x
+    return m, c
+
+
+def targetStraight(enemy_x, enemy_y, me_x, my_y, heading):
+    a = enemy_x
+    b = enemy_y
+    c = me_x
+    d = me_y
+
+    m, k = getCartesian(enemy_x, enemy_y)
+
+    speed_e = tankSpeed
+    speed_b = projectileSpeed
+
+    x = 0.0
+    y = 0.0
+
+    a = (m ** 2 + 1) * (speed_b - speed_e)
+    b = speed_b * (-2 * c + 2 * m * k - 2 * m * d) - speed_e * (-2 * a + 2 * m * k - 2 * m * b)
+    c = speed_b * (a ** 2 + k ** 2 - 2 * k * b + b ** 2) - speed_b * (a ** 2 + k ** 2 - 2 * k * d + d ** 2)
+
+    x = quadratic(a, b, c)
+    y = m * x + k
+    return x, y
+
+
+def quadratic(a, b, c):
+    return -2*b + Math.sqrt(b**2 - 4*a*c)
+
+def targetRight(enemy_x, enemy_y, me_x, me_y, speed_enemy, speed_bullet, r, p):
+    x, y = p
+    a = enemy_x
+    b = enemy_y
+    c = me_x
+    d = me_y
+
+    F[0] = sqrt((x-a)**2 + (y-b)) / speed_bullet - ( r * arccos( 1 - (x-c)**2 - (y-d)**2 ) / (2 * r**2) ) / speed_enemy
+    F[1] = (x-a)**2 + (y-b)**2 - r**2
+    return equation(F)
+
+def equation(F):
+    zGuess = array([1,1])
+    z = fsolve(equation, zGuess)
+    return z
+
+
+class Info(object):
+    def __init__(self):
+        self.mytank = None
+        self.healthPickups = {}
+        self.ammoPickups = {}
+        self.snitch = None
+        self.enemies = {}
+        self.prevEnemies = {}
+
+    def update(self, message):
+        if message['messageType'] == ServerMessageTypes.OBJECTUPDATE:
+            if message['Type'] == 'Tank':
+                if message['Name'] == args.name:
+                    self.myTank = message
+                else:
+                    self.prevEnemies[message['Id']] = self.enemies[message['Id']]
+                    self.enemies[message['Id']] = {'obj': message, 'time': 0}
+            elif message['Type'] == 'HealthPickup':
+                self.healthPickups[message['Id']] = {'obj': message, 'time': 0}
+            elif message['Type'] == 'AmmoPickup':
+                self.ammoPickups[message['Id']] = {'obj': message, 'time': 0}
+            elif message['Type'] == 'Snitch':
+                self.snitch = {'obj': message, 'time': 0}
+            else:
+                print('Unrecognized message type:', message)
 
 # Spawn our tank
 logging.info("Creating tank with name '{}'".format(args.name))
 GameServer.sendMessage(ServerMessageTypes.CREATETANK, {'Name': args.name})
 
-# Main loop - read game messages, ignore them and randomly perform actions
 maxHealth = 5
 ammo = 10
 waitTime = 50
+info = Info()
+
+def checkShot(info):
+    turretHeading = info.myTank["TurretHeading"]
+    x1
+    y1
+    h1
+    x2
+    y2
+    h2
+    for enemy in info.prevEnemies:
+        x1 = enemy['obj']['X']
+        y1 = enemy['obj']['Y']
+        h1 = enemy['obj']['Heading']
+        x2 = info.enemies[enemy['obj']['Id']]['obj']['X']
+        y2 = info.enemies[enemy['obj']['Id']]['obj']['Y']
+        h2 = info.enemies[enemy['obj']['Id']]['obj']['Heading']
+        if (x1 == x2 and y1 == y2):
+            targetStill()
+        elif (x1 != x2 or y1 != y2) and h1 == h2:
+            targetStraight()
+        elif (x1 != x2 or y1 != y2) and h1 > h2:
+            targetRight()
+        else:
+            targetLeft()
 
 def Main():
-    i=0
+    i = 0
     while True:
         message = GameServer.readMessage()
-        if (message["messageType"] == 18) :
-            print(message["Name"])
+        info.update(message)
 
-        if i == 5:
-            if random.randint(0, 10) > 5:
-                logging.info("Firing")
-                GameServer.sendMessage(ServerMessageTypes.FIRE)
-        elif i == 10:
-            logging.info("Turning randomly")
-            GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': random.randint(0, 359)})
-        elif i == 15:
-            logging.info("Moving randomly")
-            GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount': random.randint(0, 10)})
-        i = i + 1
-        if i > 20:
-            i = 0
+        GameServer.sendMessage(ServerMessageTypes.TOGGLETURRETRIGHT)
+
+        #if i == 5:
+        #    if random.randint(0, 10) > 5:
+        #        logging.info("Firing")
+        #        GameServer.sendMessage(ServerMessageTypes.FIRE)
+        #elif i == 10:
+        #    logging.info("Turning randomly")
+        #    GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': random.randint(0, 359)})
+        #elif i == 15:
+        #    logging.info("Moving randomly")
+        #    GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount': random.randint(0, 10)})
+        #i = i + 1
+        #if i > 20:
+        #    i = 0
+
 
 if __name__ == '__main__':
     Main()

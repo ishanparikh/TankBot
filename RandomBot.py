@@ -11,6 +11,7 @@ import math
 import numpy
 from scipy.optimize import *
 
+
 class ServerMessageTypes(object):
     TEST = 0
     CREATETANK = 1
@@ -80,6 +81,7 @@ class ServerMessageTypes(object):
         else:
             return "??UNKNOWN??"
 
+
 class ServerComms(object):
     '''
     TCP comms handler
@@ -146,6 +148,7 @@ class ServerComms(object):
             binascii.hexlify(message)))
         return self.ServerSocket.send(message)
 
+
 # Parse command line args
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--debug', action='store_true', help='Enable debug output')
@@ -209,12 +212,40 @@ headingErrorMove = 10  # tolerable angle error for turning before moving
 headingErrorFire = 8  # tolerable angle error for turning before firing
 allowedStationaryTime = 200  # allowed stationary time before having to move again (to avoid attack)
 
-turnRadius #TODO
-projectileSpeed #TODO
-tankSpeed #TODO
+turnRadius  # TODO
+projectileSpeed  # TODO
+tankSpeed  # TODO
 
 # vars
 stationaryTime = 0
+
+def getCartesian(x, y, b):
+    m = (b - 90) / 360
+    c = y - m * x
+    return m, c
+
+
+def targetStraight(enemy_x, enemy_y, me_x, my_y, heading):
+    a = enemy_x
+    b = enemy_y
+    c = me_x
+    d = me_y
+
+    m, k = getCartesian(enemy_x, enemy_y)
+
+    speed_e = tankSpeed
+    speed_b = projectileSpeed
+
+    x = 0.0
+    y = 0.0
+
+    a = (m ** 2 + 1) * (speed_b - speed_e)
+    b = speed_b * (-2 * c + 2 * m * k - 2 * m * d) - speed_e * (-2 * a + 2 * m * k - 2 * m * b)
+    c = speed_b * (a ** 2 + k ** 2 - 2 * k * b + b ** 2) - speed_b * (a ** 2 + k ** 2 - 2 * k * d + d ** 2)
+
+    x = quadratic(a, b, c)
+    y = m * x + k
+    return x, y
 
 def getHeading(x1, y1, x2, y2):
     heading = math.atan2(y2 - y1, x2 - x1)
@@ -222,10 +253,12 @@ def getHeading(x1, y1, x2, y2):
     heading = math.fmod(heading - 360, 360)
     return abs(heading)
 
+
 def calculateDistance(x1, y1, x2, y2):
     headingX = x2 - x1
     headingY = y2 - y1
     return math.sqrt((headingX * headingX) + (headingY * headingY))
+
 
 def tryMove(myTank, x2, y2, distance=None, alignTurret=False, shift=0):
     heading = getHeading(myTank['X'], myTank['Y'], x2, y2)
@@ -239,6 +272,7 @@ def tryMove(myTank, x2, y2, distance=None, alignTurret=False, shift=0):
         GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount': distance})
         global stationaryTime
         stationaryTime = 0
+
 
 class Info(object):
     def __init__(self):
@@ -294,7 +328,9 @@ class Info(object):
             self.didHit = True
 
     def out(self):
-        print('health:', self.myTank['Health'], 'ammo:', self.myTank['Ammo'], 'enemies:', len(self.enemies), 'healthPickups:', len(self.healthPickups), 'ammoPickups:', len(self.ammoPickups))
+        print(
+        'health:', self.myTank['Health'], 'ammo:', self.myTank['Ammo'], 'enemies:', len(self.enemies), 'healthPickups:',
+        len(self.healthPickups), 'ammoPickups:', len(self.ammoPickups))
 
     def next(self):
         def forget(dic):
@@ -324,6 +360,7 @@ class Info(object):
         self.hitDetected = False
         self.didHit = False
 
+
 class States(object):
     SCAN = 'SCAN'
     ATTACK_TARGET = 'ATTACK_TARGET'
@@ -334,6 +371,7 @@ class States(object):
     SEARCH_SNITCH = 'SEARCH_SNITCH'
     PICKUP_SNITCH = 'PICKUP_SNITCH'
     BANK_POINTS = 'BANK_POINTS'
+
 
 def transiteState(currentState, info):
     # Special cases
@@ -412,42 +450,19 @@ def transiteState(currentState, info):
 
     return currentState
 
-def getCartesian(x, y, b):
-    m = (b - 90) / 360
-    c = y - m * x
-    return m, c
-
-def targetStraight(enemy_x, enemy_y, me_x, my_y, heading):
-    a = enemy_x
-    b = enemy_y
-    c = me_x
-    d = me_y
-
-    m, k = getCartesian(enemy_x, enemy_y)
-
-    speed_e = tankSpeed
-    speed_b = projectileSpeed
-
-    x = 0.0
-    y = 0.0
-
-    a = ( m**2 + 1 ) * ( speed_b - speed_e )
-    b = speed_b * ( -2*c + 2*m*k - 2*m*d ) - speed_e * ( -2*a + 2*m*k - 2*m*b )
-    c = speed_b * ( a**2 + k**2 - 2*k*b + b**2 ) - speed_b * ( a**2 + k**2 - 2*k*d + d**2 )
-
-    x = quadratic(a, b, c)
-    y = m * x + k
-    return x, y
 
 def quadratic(a, b, c):
-    return -2*b + Math.sqrt(b**2 - 4*a*c)
+    return -2 * b + Math.sqrt(b ** 2 - 4 * a * c)
+
 
 def performAction(currentState, info):
     if currentState == States.SCAN or currentState == States.SEARCH_HEALTH or currentState == States.SEARCH_AMMO or currentState == States.SEARCH_SNITCH:
         if calculateDistance(info.myTank['X'], info.myTank['Y'], 0, 0) > 15:
-            tryMove(info.myTank, ((info.myTank['X']>0)*2-1)*10, ((info.myTank['Y']>0)*2-1)*10, alignTurret=True)  # go to a point closer to center
+            tryMove(info.myTank, ((info.myTank['X'] > 0) * 2 - 1) * 10, ((info.myTank['Y'] > 0) * 2 - 1) * 10,
+                    alignTurret=True)  # go to a point closer to center
         else:
-            GameServer.sendMessage(ServerMessageTypes.TURNTURRETTOHEADING, {'Amount': math.fmod(info.myTank['TurretHeading']+60, 360)})
+            GameServer.sendMessage(ServerMessageTypes.TURNTURRETTOHEADING,
+                                   {'Amount': math.fmod(info.myTank['TurretHeading'] + 60, 360)})
 
     elif currentState == States.PICKUP_HEALTH or currentState == States.PICKUP_AMMO or currentState == States.PICKUP_SNITCH:
         if currentState == States.PICKUP_HEALTH:
@@ -478,7 +493,7 @@ def performAction(currentState, info):
             # 		tryMove(info.myTank, x2, y2, distance=distance-expectedDist, alignTurret=True)
             # else:
             # 	tryMove(info.myTank, x2, y2, distance=distance-expectedDist, alignTurret=True)
-            tryMove(info.myTank, x2, y2, distance=distance-expectedDist, alignTurret=True)
+            tryMove(info.myTank, x2, y2, distance=distance - expectedDist, alignTurret=True)
         else:
             # # rotate body for moving
             # h1 = (heading - 90) % 360
@@ -518,6 +533,7 @@ def performAction(currentState, info):
     else:
         print('Undefined state.')
         exit()
+
 
 currentState = States.SCAN
 info = Info()
