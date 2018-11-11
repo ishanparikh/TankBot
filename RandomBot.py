@@ -8,9 +8,8 @@ import struct
 import argparse
 import time
 import math
-import random
-import numpy as np
-import tensorflow
+import numpy
+from scipy.optimize import *
 
 class ServerMessageTypes(object):
     TEST = 0
@@ -210,6 +209,10 @@ headingErrorMove = 10  # tolerable angle error for turning before moving
 headingErrorFire = 8  # tolerable angle error for turning before firing
 allowedStationaryTime = 200  # allowed stationary time before having to move again (to avoid attack)
 
+turnRadius #TODO
+projectileSpeed #TODO
+tankSpeed #TODO
+
 # vars
 stationaryTime = 0
 
@@ -245,6 +248,7 @@ class Info(object):
         self.healthPickups = {}
         self.ammoPickups = {}
         self.snitch = None
+        self.nearEnemies = {}
 
         # Other Info
         self.snitchPickedUp = None
@@ -408,23 +412,28 @@ def transiteState(currentState, info):
 
     return currentState
 
-def getLine(x, y, b):
+def getCartesian(x, y, b):
     m = (b - 90) / 360
     c = y - m * x
     return m, c
 
-def target(a, b, c, d, speed_e, speed_b, m, k):
-    # a enemy_x
-    # b enemy_y
-    # c me_x
-    # d me_y
+def targetStraight(enemy_x, enemy_y, me_x, my_y, heading):
+    a = enemy_x
+    b = enemy_y
+    c = me_x
+    d = me_y
+
+    m, k = getCartesian(enemy_x, enemy_y)
+
+    speed_e = tankSpeed
+    speed_b = projectileSpeed
 
     x = 0.0
     y = 0.0
 
     a = ( m**2 + 1 ) * ( speed_b - speed_e )
-    b = speed_b * ( -2*c + 2*m*g - 2*m*d ) - speed_e * ( -2*a + 2*m*g - 2*m*b )
-    c = speed_b * ( a**2 + g**2 - 2*g*b + b**2 ) - speed_b * ( a**2 + g**2 - 2*g*d + d**2 )
+    b = speed_b * ( -2*c + 2*m*k - 2*m*d ) - speed_e * ( -2*a + 2*m*k - 2*m*b )
+    c = speed_b * ( a**2 + k**2 - 2*k*b + b**2 ) - speed_b * ( a**2 + k**2 - 2*k*d + d**2 )
 
     x = quadratic(a, b, c)
     y = m * x + k
@@ -549,40 +558,3 @@ while True:
     performAction(currentState, info)
 
     print()
-
-# i = 0
-# ammoPos = []
-# healthPos = []
-# turretHead = []
-# while True:
-#     message = GameServer.readMessage()
-#     if message['Name']=="":
-
-#         if message['Type']=="AmmoPickup":
-#             ammoPos.append((message['X'], message['Y']))
-#         if message['Type']=="HealthPickup":
-#             healthPos.append(())
-
-#         while True:
-#             dist =
-#             angle =
-#             GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount': min(10, )})
-#     if message['Name']=="RandomBot":
-#         turretHead[]
-#     logging.info(message)
-
-#     if i<=10:
-#         logging.info("Turning randomly")
-#         logging.info("Firing")
-#         GameServer.sendMessage(ServerMessageTypes.FIRE)
-#         GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': random.randint(0, 359)})
-#     elif i <=15:
-#         logging.info("Moving randomly")
-#         GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount': random.randint(0, 10)})
-#     if message['Name'] == "RandonBot" and message['Type']=="Tank":
-#         if message['Ammo']<=5:
-#             GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': random.randint(0, 359)})
-
-#     i = i + 1
-#     if i > 20:
-#         i = 0
