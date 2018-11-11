@@ -359,18 +359,40 @@ def switchMovement(i):
 
 
 def Main():
-    t = 0
-
+    tes = 0
+    x1 = 0
+    x2 = 0
+    t1 = 0
+    num =0
+    t2 = 0
+    t = time.time()
+    i = 0
     while True:
         message = GameServer.readMessage()
         info.update(message)
-        for enemy in info.enemies:
-            print(enemy)
+        loopTime = time.time()
+        elapsedTime = loopTime - t
+        # print(i)
+        if (elapsedTime > 1):
+            
+            switchMovement(i)
+            tryShot()
+            # i =1
+            t = loopTime
+        else:
+            move(i) 
+    # t = 0
 
-        GameServer.sendMessage(ServerMessageTypes.TOGGLETURRETRIGHT)
-        # GameServer.sendMessage(ServerMessageTypes.TOGGLERIGHT)
+    # while True:
+    #     message = GameServer.readMessage()
+    #     info.update(message)
+    #     for enemy in info.enemies:
+    #         print(enemy)
 
-        tryShot()
+    #     GameServer.sendMessage(ServerMessageTypes.TOGGLETURRETRIGHT)
+    #     # GameServer.sendMessage(ServerMessageTypes.TOGGLERIGHT)
+
+    #     tryShot()
 
 
 if __name__ == '__main__':
