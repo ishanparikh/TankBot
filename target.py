@@ -1,4 +1,7 @@
 #!/bin/python
+from numpy import *
+from scipy.optimize import *
+from math import *
 
 def getLine(x, y, b):
     m = (b - 90) / 360
@@ -25,3 +28,16 @@ def target(a, b, c, d, speed_e, speed_b, m, k):
 
 def quadratic(a, b, c):
     return -2*b + Math.sqrt(b**2 - 4*a*c)
+
+def equation(p, a, b, c, d, speed_enemy, speed_bullet, r):
+    x, y = p
+
+    F[0] = sqrt((x-a)**2 + (y-b)) / speed_bullet - ( r * arccos( 1 - (x-c)**2 - (y-d)**2 ) / (2 * r**2) ) / speed_enemy
+    F[1] = (x-a)**2 + (y-b)**2 - r**2
+    return F;
+
+
+def curvedTarget(F):
+    zGuess = array([1,1])
+    z = fsolve(equation, zGuess)
+    return z
