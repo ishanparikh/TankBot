@@ -156,7 +156,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--debug', action='store_true', help='Enable debug output')
 parser.add_argument('-H', '--hostname', default='127.0.0.1', help='Hostname to connect to')
 parser.add_argument('-p', '--port', default=8052, type=int, help='Port to connect to')
-parser.add_argument('-n', '--name', default='RandomBot', help='Name of bot')
+parser.add_argument('-n', '--name', default='Anthony', help='Name of bot')
 args = parser.parse_args()
 
 # Set up console logging
@@ -188,7 +188,7 @@ def calculateDistance(x1, y1, x2, y2):
     return math.sqrt((headingX * headingX) + (headingY * headingY))
 
 def targetStill(enemy_x, enemy_y, me_x, me_y):
-    return getHeading(enemy_x, enemy_x, me_x, me_y)
+    return getHeading(enemy_x, enemy_y, me_x, me_y)
 
 def targetStraight(enemy_x, enemy_y, me_x, me_y):
     a = enemy_x
@@ -305,14 +305,15 @@ def Main():
     while True:
         message = GameServer.readMessage()
         info.update(message)
-        print(info.myTank['X'])
-        print(info.myTank['Y'])
 
+        time.sleep(2)
+
+        pdb.set_trace()
         t1 = time.time()
         GameServer.sendMessage(ServerMessageTypes.TOGGLETURRETRIGHT)
         #GameServer.sendMessage(ServerMessageTypes.TOGGLERIGHT)
-        GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, 45)
-        GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, 10)
+        GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, 180)
+        GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, 100)
         #tryShot()
         t2 = time.time()
         print(t2-t1)
