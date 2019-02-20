@@ -364,19 +364,35 @@ def switchMovement(i):
 def Main():
     t = time.time()
     i = 0
+    en_pos = [0, 0]
+    bot_pos = [0, 0]
     while True:
         message = GameServer.readMessage()
         info.update(message)
         loopTime = time.time()
         elapsedTime = loopTime - t
+        if info.enemies!={}:
+            for ens in info.enemies.values():
+                en_pos[0] = ens['X']
+                en_pos[1] = ens['Y']
+                break
+                bot_pos[0] = info.myTank['X']
+                bot_pos[1] = info.myTank['Y']
+            he_g = targetStill(en_pos[0], en_pos[1], bot_pos[0], bot_pos[1])
+            GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': he_g})
+            GameServer.sendMessage(ServerMessageTypes.TURNTURRETTOHEADING, {'Amount': he_g})
+
+            GameServer.sendMessage(ServerMessageTypes.FIRE)
+
+
         print(i)
         if (elapsedTime > 1):
             
             switchMovement(i)
             t = loopTime
         else:
-            move(i) 
-        tryShot()
+            move(i)
+
 
 if __name__ == '__main__':
     Main()
